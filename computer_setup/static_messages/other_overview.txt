@@ -1,0 +1,6 @@
+The other installations which don't fit into the other scripts will be installed:
+
+
+neofetch: Tool to display system information and cool logo
+
+fonts-powerline: Fonts to ensure proper symbols for obscure ASCII codes
