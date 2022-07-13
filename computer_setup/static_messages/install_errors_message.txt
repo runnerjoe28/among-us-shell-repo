@@ -1,0 +1,8 @@
+Note that some elements were not installed or they have created errors. These errors should be accuracy reflected in the terminal output and should clearly indicate areas where installations failed. Some reasons for failure could include, but are not limited to:
+
+	* No internet connection
+	* Outside web services being unavailable
+	* A unique version of linux being used without many standard configurations
+	* Errors with the script itself
+
+If it is unclear what the errors may be, check out the Issues page on the Github repository page (INSERT LINK). There may be someone else who experienced an error or if not, you can create a new issue to warn of this error. We appreciate all information you can direct our way.

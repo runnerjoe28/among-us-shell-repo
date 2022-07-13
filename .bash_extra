@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+# DeepForge ease of use
+alias deepforge="cd '/home/josuch/Documents/Deepforge (Native)' ; docker-compose --file docker-compose.yml run -p 8888:8888 -p 8889:8889 -e \"NODE_ENV=default\" server"
+alias defo="deepforge"

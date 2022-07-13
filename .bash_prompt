@@ -1,0 +1,514 @@
+#!/usr/bin/env bash
+
+##	ACKNOWLEDGEMENTS:
+##  This prompt is really just a modification of the prompt by @andresgongora
+##	but the source code was accessed here: 
+##	https://github.com/ChrisTitusTech/scripts/blob/master/fancy-bash-promt.sh
+##
+##	That up to date repo can be found here:
+##	https://github.com/andresgongora/synth-shell-prompt
+##
+##
+##	DESCRIPTION:
+##	This script updates your "PS1" environment variable to display colors.
+##	Addicitionally, it shortens the name of your current path to a maximum of
+##	40 characters, which is quite useful when working in deeply nested folders.
+##	In most instances, this should be enough to show two directories of depth,
+##	which is very useful for `cd` commands.
+##
+##
+##	FUNCTIONS:
+##
+##	* change_pwd_length()
+##	  This function takes your current working directory and stores a shortened
+##	  version in the variable "NEW_PWD".
+##
+##	* format_font()
+##	  A small helper function to generate color formating codes from tput codes
+##
+##	* change_text_color()
+##	  A small helper function to change the color (foreground) of text
+##
+##	* git_information()
+##	  Gets several relevant pieces of information related to git branches and
+##	  automatically formats this information into a pretty output for the prompt.
+##
+##	* bash_prompt()
+##	  This function colorizes the bash prompt. The exact color scheme can be
+##	  configured here. The structure of the function is as follows:
+##		1. FORMAT CODES: Easy to access tput 256-colors and effects
+##		2. Configuration >> EDIT YOUR PROMPT HERE<<.
+##		4. Generation of color codes for each section of the prompt
+##		5. Generation of window title (some terminal expect the first
+##		   part of $PS1 to be the window title)
+##		6. Formating of the bash prompt ($PS1).
+##
+##	* build()
+##	  General function called on terminal startup
+##
+##	* rebuild()
+##	  General function called on before each prompt is built
+##
+##	* Main script body:	
+##	  It calls the adequate helper functions to colorize your prompt
+## 
+
+
+
+################################################################################
+##  FUNCTIONS                                                                 ##
+################################################################################
+
+##
+##	ARRANGE $PWD AND STORE IT IN $NEW_PWD
+##	* The home directory (HOME) is replaced with a ~
+##	* The last pwdmaxlen characters of the PWD are displayed
+##	* Leading partial directory names are striped off
+##		/home/me/stuff -> ~/stuff (if USER=me)
+##		/usr/share/big_dir_name -> ../share/big_dir_name (if pwdmaxlen=20)
+##
+##	Original source: WOLFMAN'S color bash prompt
+##	https://wiki.chakralinux.org/index.php?title=Color_Bash_Prompt#Wolfman.27s
+##
+change_pwd_length() {
+	
+	# How many characters of $PWD should be kept
+	local pwdmaxlen=40
+
+	# Set string used to indicate a dir truncation
+	local trunc_symbol=".."
+
+	# Store the local dir
+	local dir=${PWD##*/}
+
+	# Which length to use
+	pwdmaxlen=$(( ( pwdmaxlen < ${#dir} ) ? ${#dir} : pwdmaxlen ))
+	NEW_PWD=${PWD/#$HOME/\~}
+	
+	# Get difference of pwd length and max length
+	# pwdoffset > 0 when pwd length > max length
+	local pwdoffset=$(( ${#NEW_PWD} - pwdmaxlen ))
+
+	# If the full PWD is longer than the max length, truncate the result
+	if [ ${pwdoffset} -gt "0" ]
+	then
+		NEW_PWD=${NEW_PWD:$pwdoffset:$pwdmaxlen}
+		NEW_PWD=${trunc_symbol}/${NEW_PWD#*/}
+	fi
+}
+
+
+
+##
+##	GENERATE A FORMAT SEQUENCE
+##	Uses tput formatting to change the general style, foreground (text) color,
+##	and background color. Resets text before applying changes
+##
+##	With 1 argument
+##		Arg1: 256 color code of text
+##
+##	With 2 arguments
+##		Arg1: 256 color code of text
+##		Arg2: 256 color code of background
+##
+##	With 3 arguments
+##		Arg1: tput specific font effects
+##		Arg2: 256 color code of text
+##		Arg3: 256 color code of background
+##
+##	With 0 or more than 3 arguments
+##		Simply resets to default (white, no background, no text effects)
+##
+format_font() {
+
+	# Handle formatting based on number of arguments
+	case $# in
+	1)
+		echo "\[$(tput sgr0 setaf $1)\]";;
+	2)
+		echo "\[$(tput sgr0 setaf $1 setab $2)\]";;
+	3)
+		echo "\[$(tput sgr0 $1 setaf $2 setab $3)\]";;
+	*)
+		echo "\[$(tput sgr0)\]"
+	esac
+}
+
+
+
+##
+##	CHANGE COLOR OF TEXT
+##	Argument (required)
+##		Arg1: 256 color code of text
+##
+change_text_color() {
+	echo "\[$(tput setaf $1)\]"
+}
+
+
+
+##
+##	GET GIT-RELATED INFORMATION
+##	Gets important git information, taken from @mathiasbynens dotfiles
+##	Source: https://github.com/mathiasbynens/dotfiles
+##
+##	With 1 argument (required)
+##		Arg1: 256 color code of directory/path background (for clean look)
+##
+git_information() {
+	
+	# Check if the current directory is in a Git repository (exit if not).
+	git rev-parse --is-inside-work-tree &>/dev/null || return
+
+	# Check for what branch we’re on.
+	# Get the short symbolic ref. If HEAD isn’t a symbolic ref, get a
+	# tracking remote branch or tag. Otherwise, get the
+	# short SHA for the latest commit, or give up.
+	BRANCH_NAME="$(git symbolic-ref --quiet --short HEAD 2> /dev/null || \
+		git describe --all --exact-match HEAD 2> /dev/null || \
+		git rev-parse --short HEAD 2> /dev/null || \
+		echo '(unknown)')"
+
+
+	# FORMATTING CODES (GENERAL)
+	local BACKGROUND_COLOR='237'
+	local TEXT_EFFECT='bold'
+	local BRANCH_TEXT_COLOR='253'
+
+	# SPECIFIC CODES (STATUS ICONS)
+	local UNSTAGED_COLOR='166' # Orange
+	local UNCOMMITED_COLOR='28' # Green
+	local UNTRACKED_COLOR='124' # Red
+	local STASHED_COLOR='21' # Blue
+
+	# SYMBOLS
+	local BRANCH_SYMBOL=$'\u16D8' # Trident
+	local UNSTAGED_SYMBOL='-' # Bruh it's literally a minus sign
+	local UNCOMMITED_SYMBOL=$'\uB7' # Middle dot
+	local UNTRACKED_SYMBOL=$'\u2691' # Flag
+	local STASHED_SYMBOL=$'\u21A9' # Arrow
+	local TRIANGLE=$'\uE0B0' # Standard separator
+
+	# FORMATTING
+	local SEPARATOR_FORMAT_1=$(format_font $1 $BACKGROUND_COLOR)
+	local BRANCH_FORMAT=$(format_font $TEXT_EFFECT $BRANCH_TEXT_COLOR $BACKGROUND_COLOR)
+	local SEPARATOR_FORMAT_2=$(format_font $BACKGROUND_COLOR $1)
+
+	# SEPARATORS
+	local SEPARATOR_1=$SEPARATOR_FORMAT_1$TRIANGLE
+	local SEPARATOR_2=$SEPARATOR_FORMAT_2$TRIANGLE
+
+	# Create variable for building the alerts
+	local GIT_SYBMOLS=' '
+
+	# Early exit for Chromium & Blink repo, as the dirty check takes too long.
+	# Thanks, @paulirish!
+	# https://github.com/paulirish/dotfiles/blob/dd33151f/.bash_prompt#L110-L123
+	repoUrl="$(git config --get remote.origin.url)";
+	if grep -q 'chromium/src.git' <<< "${repoUrl}"; then
+		GIT_SYBMOLS+='* '
+	else
+		# Check for uncommitted changes in the index.
+		if ! $(git diff --quiet --ignore-submodules --cached); then
+			GIT_SYBMOLS+=$(change_text_color $UNCOMMITED_COLOR)
+			GIT_SYBMOLS+=$UNCOMMITED_SYMBOL
+			GIT_SYBMOLS+=' '
+		fi;
+		# Check for unstaged changes.
+		if ! $(git diff-files --quiet --ignore-submodules --); then
+			GIT_SYBMOLS+=$(change_text_color $UNSTAGED_COLOR)
+			GIT_SYBMOLS+=$UNSTAGED_SYMBOL
+			GIT_SYBMOLS+=' '
+		fi;
+		# Check for untracked files.
+		if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+			GIT_SYBMOLS+=$(change_text_color $UNTRACKED_COLOR)
+			GIT_SYBMOLS+=$UNTRACKED_SYMBOL
+			GIT_SYBMOLS+=' '
+		fi;
+		# Check for stashed files.
+		if $(git rev-parse --verify refs/stash &>/dev/null); then
+			GIT_SYBMOLS+=$(change_text_color $STASHED_COLOR)
+			GIT_SYBMOLS+=$STASHED_SYMBOL
+			GIT_SYBMOLS+=' '
+		fi;
+	fi;
+
+	# Build the output
+	local GIT_PROMPT=""
+	GIT_PROMPT+="$SEPARATOR_1"
+	GIT_PROMPT+=" ${BRANCH_FORMAT}${BRANCH_SYMBOL} ${BRANCH_NAME}${GIT_SYBMOLS}"
+	GIT_PROMPT+="${SEPARATOR_2} "
+
+	echo "${GIT_PROMPT}"
+}
+
+
+
+##
+##	COLORIZE BASH PROMPT
+##	Modify "CUSTOM CONFIGURATION" for personalized color scheme
+##	
+bash_prompt() {
+
+	# Changes the NEW_PWD variable to update the current path (shortened)
+	change_pwd_length;
+	
+	############################################################################
+	## FORMAT CODES                                                           ##
+	## These can be used in the configuration below                           ##
+	############################################################################
+	
+	# Font effects
+	local       NONE='sgr0'
+	local       BOLD='bold'	
+	
+	# 16 colors with same names as Minecraft wool, although different tones
+	# 256 colors, helpful chart here: 
+	# 	https://www.forward.com.au/pfod/pfodControls/256ColorChart.png
+	#
+	# Feel free to tinker with the specific color codes as you'd like
+	local      WHITE='15'
+	local     ORANGE='166'
+	local    MAGENTA='125'
+	local LIGHT_BLUE='45'
+	local     YELLOW='11'
+	local       LIME='83'
+	local       PINK='212'
+	local       GRAY='237'
+	local LIGHT_GRAY='249'
+	local       CYAN='86'
+	local     PURPLE='55'
+	local       BLUE='20'
+	local      BROWN='94'
+	local      GREEN='28'
+	local        RED='124'
+	local      BLACK='0'
+	
+
+	# Additional colors (feel free to add to this)
+	local     MAROON='88'
+	local  DARK_BLUE='17'
+	local  BLUE_GRAY='67'
+	local DARK_GREEN='22'
+	
+	
+	############################################################################
+	## CUSTOM CONFIGURATION                                                   ##
+	## Choose your color combination here                                     ##
+	## 256-color integers can be directly used here if needed                 ##
+	############################################################################
+	
+	# Username style
+	local FOREGROUND_COLOR_1=$WHITE
+	local BACKGROUND_COLOR_1=$BLUE
+	local TEXT_EFFECT_1=$BOLD
+	
+	# Hostname style
+	local FOREGROUND_COLOR_2=$WHITE
+	local BACKGROUND_COLOR_2=$LIGHT_BLUE
+	local TEXT_EFFECT_2=$BOLD
+	
+	# Directory path style
+	local FOREGROUND_COLOR_3=$BLUE
+	local BACKGROUND_COLOR_3=$WHITE
+	local TEXT_EFFECT_3=$BOLD
+	
+	# Prompt style
+	local PROMPT_TEXT_COLOR=$WHITE
+
+	# Note Git configurations are too complex to put here. If interested, feel
+	# free to modify them within the git_information() method.
+
+	
+	############################################################################
+	## EXAMPLE CONFIGURATIONS                                                 ##
+	## Pre-configured color schemes for different preferences                 ##
+	############################################################################
+	
+	# CHANGE THIS (Specifies pre-defined configuration, is optional)
+	USER_CONFIG=""
+
+	# Basic red scheme
+	# Pairs well with #6E0669
+	if [ "$USER_CONFIG" = "red" ]; then
+		FOREGROUND_COLOR_1=$WHITE; BACKGROUND_COLOR_1=$RED; TEXT_EFFECT_1=$BOLD
+		FOREGROUND_COLOR_2=$WHITE; BACKGROUND_COLOR_2=$PINK; TEXT_EFFECT_2=$BOLD	
+		FOREGROUND_COLOR_3=$RED; BACKGROUND_COLOR_3=$WHITE; TEXT_EFFECT_3=$BOLD
+		PROMPT_TEXT_COLOR=$PINK
+	fi
+
+	# Basic green scheme
+	# Pairs well with #519B2F
+	if [ "$USER_CONFIG" = "green" ]; then
+		FOREGROUND_COLOR_1=$WHITE; BACKGROUND_COLOR_1=$GREEN; TEXT_EFFECT_1=$BOLD
+		FOREGROUND_COLOR_2=$GREEN; BACKGROUND_COLOR_2=$LIME; TEXT_EFFECT_2=$BOLD	
+		FOREGROUND_COLOR_3=$GREEN; BACKGROUND_COLOR_3=$WHITE; TEXT_EFFECT_3=$BOLD
+		PROMPT_TEXT_COLOR=$LIME
+	fi
+
+	# Basic blue scheme
+	# Pairs well with #030723
+	if [ "$USER_CONFIG" = "green" ]; then
+		FOREGROUND_COLOR_1=$WHITE; BACKGROUND_COLOR_1=$BLUE; TEXT_EFFECT_1=$BOLD
+		FOREGROUND_COLOR_2=$WHITE; BACKGROUND_COLOR_2=$LIGHT_BLUE; TEXT_EFFECT_2=$BOLD	
+		FOREGROUND_COLOR_3=$BLUE; BACKGROUND_COLOR_3=$WHITE; TEXT_EFFECT_3=$BOLD
+		PROMPT_TEXT_COLOR=$WHITE
+	fi
+
+	# Black and red scheme
+	# Pairs well with #4A0000
+	if [ "$USER_CONFIG" = "black_red" ]; then
+		FOREGROUND_COLOR_1=$WHITE; BACKGROUND_COLOR_1=$BLACK; TEXT_EFFECT_1=$BOLD
+		FOREGROUND_COLOR_2=$WHITE; BACKGROUND_COLOR_2=$GRAY; TEXT_EFFECT_2=$BOLD	
+		FOREGROUND_COLOR_3=$WHITE; BACKGROUND_COLOR_3=$RED; TEXT_EFFECT_3=$BOLD	
+		PROMPT_TEXT_COLOR=$RED
+	fi
+
+	# Black to blue scheme
+	# Pairs well with background #304169
+	if [ "$USER_CONFIG" = "bruised" ]; then
+		FOREGROUND_COLOR_1=$WHITE; BACKGROUND_COLOR_1=$BLACK; TEXT_EFFECT_1=$BOLD
+		FOREGROUND_COLOR_2=$WHITE; BACKGROUND_COLOR_2=$BLUE; TEXT_EFFECT_2=$BOLD	
+		FOREGROUND_COLOR_3=$WHITE; BACKGROUND_COLOR_3=$LIGHT_BLUE; TEXT_EFFECT_3=$BOLD	
+		PROMPT_TEXT_COLOR=$WHITE
+	fi
+
+	# Amongus color theme (cyan and red): https://www.schemecolor.com/among-us-game.php
+	# Pairs well with background #300724
+	if [ "$USER_CONFIG" = "sussy" ]; then
+		FOREGROUND_COLOR_1=$BROWN; BACKGROUND_COLOR_1=$YELLOW; TEXT_EFFECT_1=$BOLD
+		FOREGROUND_COLOR_2=$BLACK; BACKGROUND_COLOR_2=$MAROON; TEXT_EFFECT_2=$BOLD	
+		FOREGROUND_COLOR_3=$CYAN; BACKGROUND_COLOR_3=$BLUE; TEXT_EFFECT_3=$BOLD	
+		PROMPT_TEXT_COLOR=$WHITE
+	fi
+	
+	############################################################################
+	## TEXT FORMATING                                                         ##
+	## Generate the text formating according to configuration                 ##
+	############################################################################
+
+	# Call formating helper function: effect + font color + BG color
+	local USERNAME_FORMAT=$(format_font $TEXT_EFFECT_1 $FOREGROUND_COLOR_1 $BACKGROUND_COLOR_1)
+	local HOSTNAME_FORMAT=$(format_font $TEXT_EFFECT_2 $FOREGROUND_COLOR_2 $BACKGROUND_COLOR_2)
+	local DIRECTORY_FORMAT=$(format_font $TEXT_EFFECT_3 $FOREGROUND_COLOR_3 $BACKGROUND_COLOR_3)
+	local GIT_FORMAT="$(git_information $BACKGROUND_COLOR_3)"
+	local PROMPT_FORMAT=$(format_font $PROMPT_TEXT_COLOR)
+	
+	# Generate prompt sections
+	local PROMPT_USER=$"$USERNAME_FORMAT \u "
+	local PROMPT_HOST=$"$HOSTNAME_FORMAT \h "
+	local PROMPT_PWD=$"$DIRECTORY_FORMAT \${NEW_PWD} "
+	local PROMPT_GIT=$"${GIT_FORMAT}"
+	local PROMPT_INPUT=$"$PROMPT_FORMAT "
+
+	############################################################################
+	## SEPARATOR FORMATING                                                    ##
+	## Generate the separators between sections                               ##
+	## Uses background colors of the sections                                 ##
+	############################################################################
+	
+	# Create codes for the seperators
+	# SFC = Separator Foreground Color
+	# SBC = Separator Background Color
+	local SFC1=$BACKGROUND_COLOR_1
+	local SBG1=$BACKGROUND_COLOR_2
+	
+	local SFC2=$BACKGROUND_COLOR_2
+	local SBG2=$BACKGROUND_COLOR_3
+	
+	local SFC3=$BACKGROUND_COLOR_3
+	
+
+	## Call formatting helper: effect + font color + BG color
+	local SEPARATOR_FORMAT_1=$(format_font $SFC1 $SBG1)
+	local SEPARATOR_FORMAT_2=$(format_font $SFC2 $SBG2)
+	local SEPARATOR_FORMAT_3=$(format_font $SFC3)
+	
+
+	# Generate separators with fancy triangle
+	# The git info in "inside" the third separator
+	local TRIANGLE=$'\uE0B0'	
+	local SEPARATOR_1=$SEPARATOR_FORMAT_1$TRIANGLE
+	local SEPARATOR_2=$SEPARATOR_FORMAT_2$TRIANGLE
+	local SEPARATOR_3=$SEPARATOR_FORMAT_3$TRIANGLE
+
+
+
+	############################################################################
+	## WINDOW TITLE                                                           ##
+	## Prevent messed up terminal-window titles                               ##
+	############################################################################
+	case $TERM in
+	xterm*|rxvt*)
+		local TITLEBAR='\[\033]0;\u@\h:${NEW_PWD}\007\]'
+		;;
+	*)
+		local TITLEBAR=""
+		;;
+	esac
+
+
+
+	############################################################################
+	## BASH PROMPT                                                            ##
+	## Generate prompt and remove format from the rest                        ##
+	############################################################################
+	PS1="$TITLEBAR\n"
+	PS1+="${PROMPT_USER}${SEPARATOR_1}"
+	PS1+="${PROMPT_HOST}${SEPARATOR_2}"
+	PS1+="${PROMPT_PWD}"
+	PS1+="${PROMPT_GIT}${SEPARATOR_3}"
+	PS1+="${PROMPT_INPUT}"
+
+	## For terminal line coloring, leaving the rest standard
+	none="$(tput sgr0)"
+	trap 'echo -ne "${none}"' DEBUG
+}
+
+
+
+##
+##	BUILD THE PROMPT
+##	Executes once when the terminal is loaded
+##
+build() {
+	
+	# Display neofetch information
+	neofetch --ascii ~/.bash_more/sus_neofetch.txt --ascii_colors 0 51 30 15 116 59 --colors 12 15 15 12 15 15
+
+}
+
+
+
+##
+##	REBUILD THE PROMPT
+##	Ensures proper rebuilding of prompt upon every render
+##	Inefficient, but functional
+##
+rebuild() {
+	
+	# Get the current shortened PWD
+	change_pwd_length
+
+	# Modify the PS1
+	bash_prompt
+}
+
+
+
+################################################################################
+##  MAIN                                                                      ##
+################################################################################
+
+##	Do the inital build
+build
+
+##	Bash provides an environment variable called PROMPT_COMMAND. 
+##	The contents of this variable are executed as a regular Bash command 
+##	just before Bash displays a prompt. 
+##	We just want to call the command to construct our bash prompt
+PROMPT_COMMAND=rebuild
+
+
+### EOF ###

@@ -1,0 +1,1 @@
+Both docker and docker-compose will be installed. In addition, the current user will be added to the "docker" group in order to grant them permission to execute docker related commands without the use of sudo.

@@ -1,0 +1,13 @@
+The following python related installations will have attempts made to install them.
+
+
+pip: package manager for python, all libraries installations rely on it
+
+tensorflow (pip library): core machine learning tools and capabilities
+
+matplotlib (pip library): plotting and graphical tools
+
+spektral (pip library): graph deep learning
+
+
+Note many other libraries will be installed along the way. For a full list of libraries that should be installed, see the "reference_python_libraries.txt" document.
