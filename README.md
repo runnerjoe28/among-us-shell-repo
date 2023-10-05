@@ -1,6 +1,6 @@
-# Joseph's Dotfiles (Jotfiles)
+# Amongus Shell
 
-Insert a picture here eventually (lol)
+![Picture of the terminal with the amongus astronaut and computer stats](/images/terminal_screenshot.png)
 
 ## Installation
 **Warning:** Many aspects of this repository may not be beneficial to your specific system. Please carefully review the files before you give them a try. You can do this by forking the repository or by combing through the files you want. You can also install this manually by downloading the zip folder.
@@ -36,7 +36,8 @@ As someone who has probably installed an Ubuntu VM ten times, it can be infuriat
 ## Acknowledgements
 Specific awknowledgements should be given within appropriate files (I tried my best). Special thanks to:
 - [Mathias Bynens](https://github.com/mathiasbynens) for his [dotfiles repository](https://github.com/mathiasbynens/dotfiles)
-- [Andres Gongora](https://github.com/andresgongora) for his [synth-shell-prompt](https://github.com/andresgongora/synth-shell-prompt) 
+- [Andres Gongora](https://github.com/andresgongora) for his [synth-shell-prompt](https://github.com/andresgongora/synth-shell-prompt)
+- The contributors behind [neofetch](https://github.com/dylanaraps/neofetch)
 - Everyone who contributed to these fantastic projects
 
 Other help:
