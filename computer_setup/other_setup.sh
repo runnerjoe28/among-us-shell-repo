@@ -3,7 +3,7 @@
 ################################################################################
 
 
-# Display message indicating the python related installs are beginning
+# Display message indicating the other installs are beginning
 # Also give overview of installs
 cat ./static_messages/other_overview.txt
 echo -e "\n$SEPARATOR\n"
@@ -16,7 +16,7 @@ echo -e "BEGINNING OTHER INSTALLATIONS NOW\n"
 ##
 ##      (<version_command> &> /dev/null && echo "<already_installed>") || <install_command>
 ##
-##  Descript of variables and terms
+##  Description of variables and terms
 ##      * version_command - check version of tool
 ##      * /dev/null - directory for directing unwanted output
 ##      * already_installed - message indicating tool is already installed

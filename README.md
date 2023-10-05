@@ -14,11 +14,11 @@ source copy.sh
 ### Using Git and the Copy Script
 You can clone this repository anywhere you want. I personally keep it in ~/Documents/dotfiles. The provided copying script will automatically move all bash related files into your ~/ directory, overriding the old versions of those files. You can clone the repository into any folder you choose. The following will do just that:
 ```bash
-git clone https://github.com/runnerjoe28/dotfiles.git && cd dotfiles && source copy.sh
+git clone https://github.com/runnerjoe28/among-us-shell-repo && cd among-us-shell-repo && source copy.sh
 ```
 
 ### Making Changes
-I would reccomend making all changes within whatever directory you clone/downloaded the files to (outside of ~/). Then, when you are ready to make changes, `cd` into your `dotfiles` directory and execute the following:
+I would reccomend making all changes within whatever directory you clone/downloaded the files to (outside of ~/). Then, when you are ready to make changes, `cd` into your `among-us-shell-repo` directory and execute the following:
 ```bash
 source copy.sh
 ```
@@ -40,4 +40,4 @@ Specific awknowledgements should be given within appropriate files (I tried my b
 - Everyone who contributed to these fantastic projects
 
 Other help:
-- Marie, my younger sister for helping me with the color schemes
+- My younger sister for helping me with the color schemes
