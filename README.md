@@ -31,7 +31,14 @@ The features of this repo extend beyond just making the prompt nicer. There is a
 Upon running `source copy.sh` your terminal will be updated with a beautified look. There is added capabilities for git tracking, easy aliases, and some fun commands to play around with.
 
 ### System Setup (Personal Configurations)
-As someone who has probably installed an Ubuntu VM ten times, it can be infuriating to re-configure many the virtual machine every time. Within `/computer_setup`, there are scripts to automatically set up my machine (designed for Ubuntu). Namely, installation of some key programming tools that I find very helpful.
+As someone who has probably installed an Ubuntu VM ten times, it can be infuriating to re-configure many the virtual machine every time. Within `/computer_setup`, there are scripts to automatically set up my machine (designed for Ubuntu). Namely, installation of some key programming tools that I find very helpful. In order for the full shell prompt to be displayed, you must run at minimum the following setup:
+
+```
+sudo apt install neofetch
+sudo apt install fonts-powerline
+```
+
+These are used to get the correct font output (powerline) and to run the beautiful information about the OS, Host, etc (neofetch).
 
 ## Acknowledgements
 Specific awknowledgements should be given within appropriate files (I tried my best). Special thanks to:
