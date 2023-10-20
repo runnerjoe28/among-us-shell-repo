@@ -251,6 +251,25 @@ git_information() {
 ##	
 bash_prompt() {
 
+	if [ "$USE_FANCY_PROMPT" = false ] ; then
+		if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+			# We have color support
+			color_prompt=yes
+		else
+			color_prompt=
+		fi
+
+		if [ "$color_prompt" = yes ]; then
+			PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+		else
+			PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+		fi
+		unset color_prompt force_color_prompt
+
+		# Return early to set PS1
+		return 0
+	fi
+	
 	# Changes the NEW_PWD variable to update the current path (shortened)
 	change_pwd_length;
 	
@@ -476,6 +495,9 @@ build() {
 	
 	# Display neofetch information
 	neofetch --ascii ~/.bash_more/sus_neofetch.txt --ascii_colors 0 51 30 15 116 59 --colors 12 15 15 12 15 15
+
+	# Set whether we want a fancy prompt or not
+	USE_FANCY_PROMPT=true
 
 }
 
