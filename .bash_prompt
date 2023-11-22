@@ -246,11 +246,31 @@ git_information() {
 
 
 ##
+##	GET PYTHON VENV RELATED INFORMATION
+##	Gets important git information, taken from 
+##	https://mcgillij.dev/adding-venv-to-synth-shell.html
+##
+##	With 2 argument (required)
+##		Arg1: 256 color code of text color
+##		Arg2: 256 color code of background color
+##
+venv_information() {
+	if [ -n "${VIRTUAL_ENV}" ]; then
+		## PYTHON VIRTUALENV PROMPT
+		local VENV_FORMAT=$(format_font $1 $2)
+		local VENV_PROMPT=$"$VENV_FORMAT ($(basename ${VIRTUAL_ENV})) "
+		echo "${VENV_PROMPT}"
+	fi
+}
+
+
+##
 ##	COLORIZE BASH PROMPT
 ##	Modify "CUSTOM CONFIGURATION" for personalized color scheme
 ##	
 bash_prompt() {
 
+	# Handle standard prompt (i.e. the standard)
 	if [ "$USE_FANCY_PROMPT" = false ] ; then
 		if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
 			# We have color support
@@ -408,6 +428,7 @@ bash_prompt() {
 	############################################################################
 
 	# Call formating helper function: effect + font color + BG color
+	local VENV_FORMAT=$(venv_information $BLUE $WHITE)
 	local USERNAME_FORMAT=$(format_font $TEXT_EFFECT_1 $FOREGROUND_COLOR_1 $BACKGROUND_COLOR_1)
 	local HOSTNAME_FORMAT=$(format_font $TEXT_EFFECT_2 $FOREGROUND_COLOR_2 $BACKGROUND_COLOR_2)
 	local DIRECTORY_FORMAT=$(format_font $TEXT_EFFECT_3 $FOREGROUND_COLOR_3 $BACKGROUND_COLOR_3)
@@ -415,6 +436,7 @@ bash_prompt() {
 	local PROMPT_FORMAT=$(format_font $PROMPT_TEXT_COLOR)
 	
 	# Generate prompt sections
+	local PROMPT_VENV=$"${VENV_FORMAT}"
 	local PROMPT_USER=$"$USERNAME_FORMAT \u "
 	local PROMPT_HOST=$"$HOSTNAME_FORMAT \h "
 	local PROMPT_PWD=$"$DIRECTORY_FORMAT \${NEW_PWD} "
@@ -474,6 +496,7 @@ bash_prompt() {
 	## Generate prompt and remove format from the rest                        ##
 	############################################################################
 	PS1="$TITLEBAR\n"
+	PS1+="${PROMPT_VENV}"
 	PS1+="${PROMPT_USER}${SEPARATOR_1}"
 	PS1+="${PROMPT_HOST}${SEPARATOR_2}"
 	PS1+="${PROMPT_PWD}"
@@ -509,9 +532,6 @@ build() {
 ##	Inefficient, but functional
 ##
 rebuild() {
-	
-	# Get the current shortened PWD
-	change_pwd_length
 
 	# Modify the PS1
 	bash_prompt
